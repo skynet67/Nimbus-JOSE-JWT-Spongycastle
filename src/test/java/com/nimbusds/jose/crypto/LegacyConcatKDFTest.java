@@ -6,7 +6,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 import junit.framework.TestCase;
 
-import org.bouncycastle.util.Arrays;
+import org.spongycastle.util.Arrays;
 
 import com.nimbusds.jose.EncryptionMethod;
 

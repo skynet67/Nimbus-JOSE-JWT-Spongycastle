@@ -3,12 +3,12 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.nimbusds</groupId>
-    <artifactId>nimbus-jose-jwt</artifactId>
+    <groupId>com.nimbusds.spongycastle</groupId>
+    <artifactId>nimbus-jose-jwt-spongycastle</artifactId>
     <version>4.16.3-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <name>Nimbus JOSE+JWT</name>
+    <name>Nimbus JOSE+JWT Spongy Castle</name>
     <description>
         Java library for Javascript Object Signing and Encryption (JOSE) and
         JSON Web Tokens (JWT)
@@ -59,16 +59,14 @@
             <version>1.3.1</version>
         </dependency>
         <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk15on</artifactId>
-            <version>[1.52,)</version>
-            <optional>true</optional>
+            <groupId>com.madgag.spongycastle</groupId>
+            <artifactId>prov</artifactId>
+            <version>1.54.0.0</version>
         </dependency>
         <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcpkix-jdk15on</artifactId>
-            <version>[1.52,)</version>
-            <scope>test</scope>
+            <groupId>com.madgag.spongycastle</groupId>
+            <artifactId>pkix</artifactId>
+            <version>1.54.0.0</version>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>

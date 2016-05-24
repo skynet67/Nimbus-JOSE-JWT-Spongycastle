@@ -1,7 +1,7 @@
 package com.nimbusds.jose.crypto.bc;
 
 
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.spongycastle.jce.provider.BouncyCastleProvider;
 
 
 /**

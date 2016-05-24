@@ -72,7 +72,7 @@ class ECParameterTable {
 
 
 	static {
-		// Values obtained from org.bouncycastle.jce.ECNamedCurveTable
+		// Values obtained from org.spongycastle.jce.ECNamedCurveTable
 
 		P_256_SPEC = new ECParameterSpec(
 			new EllipticCurve(
