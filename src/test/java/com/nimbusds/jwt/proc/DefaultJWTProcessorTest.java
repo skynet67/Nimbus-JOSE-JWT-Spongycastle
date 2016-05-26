@@ -132,6 +132,39 @@ public class DefaultJWTProcessorTest extends TestCase {
 	}
 
 
+	public void testProcessInvalidHmac()
+		throws Exception {
+
+		JWTClaimsSet claims = new JWTClaimsSet.Builder().subject("alice").build();
+		SignedJWT jwt = new SignedJWT(new JWSHeader(JWSAlgorithm.HS256), claims);
+
+		byte[] keyBytes = new byte[32];
+		new SecureRandom().nextBytes(keyBytes);
+		final SecretKey invalidKey = new SecretKeySpec(keyBytes, "HMAC");
+
+		jwt.sign(new MACSigner(invalidKey));
+
+		ConfigurableJWTProcessor<SimpleSecurityContext> processor = new DefaultJWTProcessor<>();
+
+		processor.setJWSKeySelector(new JWSKeySelector<SimpleSecurityContext>() {
+			@Override
+			public List<? extends Key> selectJWSKeys(JWSHeader header, SimpleSecurityContext context) {
+				byte[] keyBytes = new byte[32];
+				new SecureRandom().nextBytes(keyBytes);
+				final SecretKey validKey = new SecretKeySpec(keyBytes, "HMAC");
+				return Arrays.asList(new SecretKeySpec(new byte[32], "HMAC"), validKey);
+			}
+		});
+
+		try {
+			processor.process(jwt, null);
+			fail();
+		} catch (BadJWSException e) {
+			assertEquals("Signed JWT rejected: Invalid signature", e.getMessage());
+		}
+	}
+
+
 	public void testProcessHmacJWTWithTwoKeyCandidates()
 		throws Exception {
 
@@ -749,5 +782,40 @@ public class DefaultJWTProcessorTest extends TestCase {
 				}
 			}
 		});
+	}
+
+
+	// iss178
+	public void _testGoogleIDToken()
+		throws Exception {
+
+		// ID token from Google
+		String token = "eyJhbGciOiJSUzI1NiIsImtpZCI6ImU3ZGJmNTI2ZjYzOWMyMTRjZDc3YjM5NmVjYjlkN2Y4MWQ0N2IzODIifQ.eyJpc3MiOiJhY2NvdW50cy5nb29nbGUuY29tIiwiYXRfaGFzaCI6ImdYM0ZJYzFxVUZzXy16RTNYYVMtZUEiLCJhdWQiOiI0MDc0MDg3MTgxOTIuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJzdWIiOiIxMTI4OTY5MTg4OTk2MjY2OTEzNzQiLCJhenAiOiI0MDc0MDg3MTgxOTIuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJpYXQiOjE0NjMxMzg2NDksImV4cCI6MTQ2MzE0MjI0OX0.GqQ0DPQQ5ixOGGAxcEu_5vqbMS7RyNzLrcn21AEid-61eQU0roq7gMVmCrTLeSghenNKNgFWQeErPe5i-6gxqV0r89dOdXRegpCLPAq7d-acPK_8bw-gOtbEo9Hhzcc56r51FwnZ3IUDgyKB_ZRNdp1LMnBgX--c6vPhy4_ZkVnJvmCzTz6bz-pdZNGFhtKd-xt35qVuyUok9tiGumKh-Tjrov5KPuZI90leRfLpoWDj_ktTClg3VUvXAtvDFhW94xEOS4s8DcvbxP9OrR3zhp4bgLohF-B0OrEqc9pTpYO87HyGJlvT74Re288tGZfCRJFX92BT1M063yt3QPrE8W";
+		String jwkUri = "https://www.googleapis.com/oauth2/v3/certs";
+
+		// Set up a JWT processor to parse the tokens and then check their signature
+		// and validity time window (bounded by the "iat", "nbf" and "exp" claims)
+		ConfigurableJWTProcessor jwtProcessor = new DefaultJWTProcessor();
+
+		// The public RSA keys to validate the signatures will be sourced from the
+		// OAuth 2.0 server's JWK set, published at a well-known URL. The RemoteJWKSet
+		// object caches the retrieved keys to speed up subsequent look-ups and can
+		// also gracefully handle key-rollover
+		JWKSource keySource = new RemoteJWKSet(new URL(jwkUri));
+
+		// The expected JWS algorithm of the access tokens (agreed out-of-band)
+		JWSAlgorithm expectedJWSAlg = JWSAlgorithm.RS256;
+
+		// Configure the JWT processor with a key selector to feed matching public
+		// RSA keys sourced from the JWK set URL
+		JWSKeySelector keySelector = new JWSVerificationKeySelector(expectedJWSAlg, keySource);
+		jwtProcessor.setJWSKeySelector(keySelector);
+
+		// Process the token
+		SecurityContext ctx = null; // optional context parameter, not required here
+		JWTClaimsSet claimsSet = jwtProcessor.process(token, ctx);
+
+		// Print out the token claims set
+		System.out.println(claimsSet.toJSONObject());
 	}
 }
