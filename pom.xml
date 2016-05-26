@@ -5,7 +5,7 @@
 
     <groupId>com.nimbusds.spongycastle</groupId>
     <artifactId>nimbus-jose-jwt-spongycastle</artifactId>
-    <version>4.18-SNAPSHOT</version>
+    <version>4.17</version>
     <packaging>jar</packaging>
 
     <name>Nimbus JOSE+JWT Spongy Castle</name>
@@ -32,7 +32,7 @@
         <connection>scm:git:https://bitbucket.org/connect2id/nimbus-jose-jwt.git</connection>
         <developerConnection> scm:git:git@bitbucket.org:connect2id/nimbus-jose-jwt.git</developerConnection>
         <url>https://bitbucket.org/connect2id/nimbus-jose-jwt</url>
-        <tag>HEAD</tag>
+        <tag>4.17</tag>
     </scm>
 
     <developers>
@@ -57,6 +57,11 @@
             <groupId>net.minidev</groupId>
             <artifactId>json-smart</artifactId>
             <version>1.3.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.madgag.spongycastle</groupId>
+            <artifactId>core</artifactId>
+            <version>1.54.0.0</version>
         </dependency>
         <dependency>
             <groupId>com.madgag.spongycastle</groupId>
