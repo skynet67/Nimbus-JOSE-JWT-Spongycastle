@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.nimbusds.jose.RemoteKeySourceException;
 import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jose.jwk.JWKMatcher;
 import com.nimbusds.jose.jwk.JWKSelector;
@@ -25,7 +26,7 @@ import net.jcip.annotations.ThreadSafe;
  * the key selector tries to get a key with an unknown ID.
  *
  * @author Vladimir Dzhuvinov
- * @version 2016-04-10
+ * @version 2016-05-28
  */
 @ThreadSafe
 public class RemoteJWKSet<C extends SecurityContext> implements JWKSource<C> {
@@ -72,9 +73,9 @@ public class RemoteJWKSet<C extends SecurityContext> implements JWKSource<C> {
 
 	/**
 	 * Creates a new remote JWK set using the
-	 * {@link DefaultResourceRetriever default HTTP resource retriever}.
-	 * Starts an asynchronous thread to fetch the JWK set from the
-	 * specified URL. The JWK set is cached if successfully retrieved.
+	 * {@link DefaultResourceRetriever default HTTP resource retriever},
+	 * with a HTTP connect timeout set to 250 ms, HTTP read timeout set to
+	 * 250 ms and a 50 KByte size limit.
 	 *
 	 * @param jwkSetURL The JWK set URL. Must not be {@code null}.
 	 */
@@ -84,9 +85,7 @@ public class RemoteJWKSet<C extends SecurityContext> implements JWKSource<C> {
 
 
 	/**
-	 * Creates a new remote JWK set. Starts an asynchronous thread to
-	 * fetch the JWK set from the specified URL. The JWK set is cached if
-	 * successfully retrieved.
+	 * Creates a new remote JWK set.
 	 *
 	 * @param jwkSetURL         The JWK set URL. Must not be {@code null}.
 	 * @param resourceRetriever The HTTP resource retriever to use,
@@ -106,29 +105,29 @@ public class RemoteJWKSet<C extends SecurityContext> implements JWKSource<C> {
 		} else {
 			jwkSetRetriever = new DefaultResourceRetriever(DEFAULT_HTTP_CONNECT_TIMEOUT, DEFAULT_HTTP_READ_TIMEOUT, DEFAULT_HTTP_SIZE_LIMIT);
 		}
-
-		Thread t = new Thread() {
-			public void run() {
-				updateJWKSetFromURL();
-			}
-		};
-		t.setName("initial-jwk-set-retriever["+ jwkSetURL +"]");
-		t.start();
 	}
 
 
 	/**
 	 * Updates the cached JWK set from the configured URL.
 	 *
-	 * @return The updated JWK set, {@code null} if retrieval failed.
+	 * @return The updated JWK set.
+	 *
+	 * @throws RemoteKeySourceException If JWK retrieval failed.
 	 */
-	private JWKSet updateJWKSetFromURL() {
+	private JWKSet updateJWKSetFromURL()
+		throws RemoteKeySourceException {
+		Resource res;
+		try {
+			res = jwkSetRetriever.retrieveResource(jwkSetURL);
+		} catch (IOException e) {
+			throw new RemoteKeySourceException("Couldn't retrieve remote JWK set: " + e.getMessage(), e);
+		}
 		JWKSet jwkSet;
 		try {
-			Resource res = jwkSetRetriever.retrieveResource(jwkSetURL);
 			jwkSet = JWKSet.parse(res.getContent());
-		} catch (IOException | java.text.ParseException e) {
-			return null;
+		} catch (java.text.ParseException e) {
+			throw new RemoteKeySourceException("Couldn't parse remote JWK set: " + e.getMessage(), e);
 		}
 		cachedJWKSet.set(jwkSet);
 		return jwkSet;
@@ -161,12 +160,8 @@ public class RemoteJWKSet<C extends SecurityContext> implements JWKSource<C> {
 	 *
 	 * @return The cached JWK set, {@code null} if none.
 	 */
-	public JWKSet getJWKSet() {
-		JWKSet jwkSet = cachedJWKSet.get();
-		if (jwkSet != null) {
-			return jwkSet;
-		}
-		return updateJWKSetFromURL();
+	public JWKSet getCachedJWKSet() {
+		return cachedJWKSet.get();
 	}
 
 
@@ -198,14 +193,16 @@ public class RemoteJWKSet<C extends SecurityContext> implements JWKSource<C> {
 	 * {@inheritDoc} The security context is ignored.
 	 */
 	@Override
-	public List<JWK> get(final JWKSelector jwkSelector, final C context) {
+	public List<JWK> get(final JWKSelector jwkSelector, final C context)
+		throws RemoteKeySourceException {
 
 		// Get the JWK set, may necessitate a cache update
-		JWKSet jwkSet = getJWKSet();
+		JWKSet jwkSet = cachedJWKSet.get();
 		if (jwkSet == null) {
-			// Retrieval has failed
-			return Collections.emptyList();
+			jwkSet = updateJWKSetFromURL();
 		}
+
+		// Run the selector on the JWK set
 		List<JWK> matches = jwkSelector.select(jwkSet);
 
 		if (! matches.isEmpty()) {
@@ -214,22 +211,27 @@ public class RemoteJWKSet<C extends SecurityContext> implements JWKSource<C> {
 		}
 
 		// Refresh the JWK set if the sought key ID is not in the cached JWK set
+
+		// Looking for JWK with specific ID?
 		String soughtKeyID = getFirstSpecifiedKeyID(jwkSelector.getMatcher());
 		if (soughtKeyID == null) {
 			// No key ID specified, return no matches
-			return matches;
+			return Collections.emptyList();
 		}
+
 		if (jwkSet.getKeyByKeyId(soughtKeyID) != null) {
 			// The key ID exists in the cached JWK set, matching
 			// failed for some other reason, return no matches
-			return matches;
+			return Collections.emptyList();
 		}
+
 		// Make new HTTP GET to the JWK set URL
 		jwkSet = updateJWKSetFromURL();
 		if (jwkSet == null) {
 			// Retrieval has failed
-			return null;
+			return Collections.emptyList();
 		}
+
 		// Repeat select, return final result (success or no matches)
 		return jwkSelector.select(jwkSet);
 	}

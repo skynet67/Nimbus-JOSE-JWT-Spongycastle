@@ -527,3 +527,37 @@ version 4.17 (2016-05-25)
       Commons which is not recommended for licensing software, see
       https://creativecommons.org/faq/ (issue #180).
 
+version 4.18 (2016-05-28)
+    * Raises default HTTP connect and read timeouts of RemoteJWKSet to 1
+      second.
+    * Removes asynchronous retrieval thread from the RemoteJWKSet constructor.
+    * Adds a RemoteJWKSet getter for the last encountered retrieval exception.
+      Intended for logging and debugging purposes.
+
+version 4.19 (2016-06-15)
+    * Changes JWKSource.get interface to throw an IOException if retrieval of
+      the underlying JWKs failed, e.g. due to a network exception. Required to
+      communicate retrieval exceptions in the JOSE / JWT processing framework
+      (issue 182).
+
+version 4.20 (2016-06-21)
+    * Adds new KeySource and RemoteKeySource exception classes, extending the
+      base checked JOSEException class.
+    * Updates the JWKSource, JWSKeySelector and JWEKeySelector classes to throw
+      a KeySource instead of an IOException.
+
+version 4.21 (2016-06-29)
+    * Modifies the RSADecrypter to accept private RSA keys represented by the
+      generic java.security.PrivateKey interface instead of the more specific
+      java.security.interfaces.RSAPrivateKey. The getPrivateKey method is also
+      modified accordingly to return a java.security.PrivateKey instance. This
+      change is required to support key stores that prevent exposure of the
+      private key parameters via the java.security.interfaces.RSAPrivateKey
+      API, such as the built-in key store of Android M, and various HSM
+      implementations (issue #184).
+
+version 4.22 (2016-07-03)
+    * Adds new JWK.size method that returns the key's bit length.
+    * Adds JWKMatcher support for specifying minimum and maximum key size (in
+      bits) (issue #186).
+

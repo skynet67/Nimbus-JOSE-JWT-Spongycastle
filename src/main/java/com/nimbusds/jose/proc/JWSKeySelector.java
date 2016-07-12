@@ -5,6 +5,7 @@ import java.security.Key;
 import java.util.List;
 
 import com.nimbusds.jose.JWSHeader;
+import com.nimbusds.jose.KeySourceException;
 
 
 /**
@@ -30,7 +31,7 @@ import com.nimbusds.jose.JWSHeader;
  * </ul>
  *
  * @author Vladimir Dzhuvinov
- * @version 2015-06-08
+ * @version 2016-06-21
  */
 public interface JWSKeySelector<C extends SecurityContext>  {
 
@@ -44,6 +45,11 @@ public interface JWSKeySelector<C extends SecurityContext>  {
 	 *                not required.
 	 *
 	 * @return The key candidates in trial order, empty list if none.
+	 *
+	 * @throws KeySourceException If a key sourcing exception is
+	 *                            encountered, e.g. on remote JWK
+	 *                            retrieval.
 	 */
-	List<? extends Key> selectJWSKeys(final JWSHeader header, final C context);
+	List<? extends Key> selectJWSKeys(final JWSHeader header, final C context)
+		throws KeySourceException;
 }

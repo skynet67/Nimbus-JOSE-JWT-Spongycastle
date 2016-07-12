@@ -1,6 +1,7 @@
 package com.nimbusds.jwt.proc;
 
 
+import java.io.IOException;
 import java.security.Key;
 import java.text.ParseException;
 import java.util.List;
@@ -63,7 +64,7 @@ import com.nimbusds.jwt.*;
  * {@link com.nimbusds.jose.proc.DefaultJOSEProcessor} class.
  *
  * @author Vladimir Dzhuvinov
- * @version 2015-10-20
+ * @version 2016-06-21
  */
 public class DefaultJWTProcessor<C extends SecurityContext>
 	implements ConfigurableJWTProcessor<C> {

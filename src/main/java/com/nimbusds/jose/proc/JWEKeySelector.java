@@ -1,10 +1,12 @@
 package com.nimbusds.jose.proc;
 
 
+import java.io.IOException;
 import java.security.Key;
 import java.util.List;
 
 import com.nimbusds.jose.JWEHeader;
+import com.nimbusds.jose.KeySourceException;
 
 
 /**
@@ -30,7 +32,7 @@ import com.nimbusds.jose.JWEHeader;
  * </ul>
  *
  * @author Vladimir Dzhuvinov
- * @version 2015-06-08
+ * @version 2016-06-21
  */
 public interface JWEKeySelector <C extends SecurityContext> {
 
@@ -44,6 +46,10 @@ public interface JWEKeySelector <C extends SecurityContext> {
 	 *                not required.
 	 *
 	 * @return The key candidates in trial order, empty list if none.
+	 *
+	 * @throws IOException If a key source exception is encountered, e.g.
+	 *                     on remote JWK retrieval.
 	 */
-	List<? extends Key> selectJWEKeys(final JWEHeader header, final C context);
+	List<? extends Key> selectJWEKeys(final JWEHeader header, final C context)
+		throws KeySourceException;
 }

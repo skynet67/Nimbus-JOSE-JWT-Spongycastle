@@ -1,6 +1,7 @@
 package com.nimbusds.jose.proc;
 
 
+import java.io.IOException;
 import java.security.Key;
 import java.text.ParseException;
 import java.util.List;
@@ -54,7 +55,7 @@ import net.jcip.annotations.ThreadSafe;
  * {@link com.nimbusds.jwt.proc.DefaultJWTProcessor} class.
  *
  * @author Vladimir Dzhuvinov
- * @version 2015-10-20
+ * @version 2016-06-15
  */
 @ThreadSafe
 public class DefaultJOSEProcessor<C extends SecurityContext> implements ConfigurableJOSEProcessor<C>{
